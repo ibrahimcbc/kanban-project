@@ -16,9 +16,29 @@ interface TaskCardProps {
   categoryColor?: string;
   onMoveNext: (id: string, nextStatus: TaskStatus) => void;
   onDelete: (id: string) => void;
+  onOpen: (id: string) => void;
 }
 
-export function TaskCard({ task, categoryColor, onMoveNext, onDelete }: TaskCardProps) {
+function deadlineStyle(deadline: string | null, isDone: boolean) {
+  if (!deadline) return null;
+  if (isDone) {
+    return "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(deadline);
+  const diffDays = Math.round((due.getTime() - today.getTime()) / 86400000);
+  if (diffDays < 0) return "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300";
+  if (diffDays <= 2) return "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300";
+  return "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300";
+}
+
+function formatDate(deadline: string) {
+  const d = new Date(deadline);
+  return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+}
+
+export function TaskCard({ task, categoryColor, onMoveNext, onDelete, onOpen }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id });
 
@@ -26,43 +46,64 @@ export function TaskCard({ task, categoryColor, onMoveNext, onDelete }: TaskCard
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    borderLeftColor: categoryColor ?? "#6366f1",
   };
 
   const currentIndex = STATUS_ORDER.indexOf(task.status);
   const nextStatus = STATUS_ORDER[currentIndex + 1];
+  const dueStyle = deadlineStyle(task.deadline, task.status === "tamamlandi");
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="rounded-lg border border-black/10 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-neutral-900"
+      onClick={() => onOpen(task.id)}
+      className="cursor-pointer rounded-xl border border-l-4 border-slate-200/70 bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-slate-700 dark:bg-slate-900"
     >
       <div className="flex items-start gap-2">
         <div
           {...attributes}
           {...listeners}
-          className="mt-1 cursor-grab select-none text-neutral-400 active:cursor-grabbing"
+          onClick={(e) => e.stopPropagation()}
+          className="mt-1 cursor-grab select-none text-slate-300 active:cursor-grabbing dark:text-slate-600"
           aria-label="Sürükle"
         >
           ⠿
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="break-words text-sm font-medium text-neutral-900 dark:text-neutral-100">
-            {task.title}
-          </p>
-          <span
-            className="mt-1 inline-block rounded-full px-2 py-0.5 text-xs text-white"
-            style={{ backgroundColor: categoryColor ?? "#64748b" }}
-          >
-            {task.category}
-          </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="break-words text-sm font-medium text-slate-800 dark:text-slate-100">
+              {task.title}
+            </p>
+            {task.is_important && (
+              <span className="shrink-0 text-amber-400" title="Önemli">
+                ★
+              </span>
+            )}
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <span
+              className="inline-block rounded-full px-2 py-0.5 text-xs font-medium text-white"
+              style={{ backgroundColor: categoryColor ?? "#6366f1" }}
+            >
+              {task.category}
+            </span>
+            {task.deadline && (
+              <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${dueStyle}`}>
+                {formatDate(task.deadline)}
+              </span>
+            )}
+          </div>
         </div>
       </div>
       <div className="mt-3 flex items-center justify-between gap-2">
         {nextStatus ? (
           <button
-            onClick={() => onMoveNext(task.id, nextStatus)}
-            className="rounded-md bg-neutral-100 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoveNext(task.id, nextStatus);
+            }}
+            className="rounded-lg bg-violet-50 px-2 py-1 text-xs font-medium text-violet-700 hover:bg-violet-100 dark:bg-violet-500/10 dark:text-violet-300 dark:hover:bg-violet-500/20"
           >
             → {STATUS_LABELS[nextStatus]}
           </button>
@@ -70,8 +111,11 @@ export function TaskCard({ task, categoryColor, onMoveNext, onDelete }: TaskCard
           <span />
         )}
         <button
-          onClick={() => onDelete(task.id)}
-          className="rounded-md px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(task.id);
+          }}
+          className="rounded-lg px-2 py-1 text-xs font-medium text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10"
         >
           Sil
         </button>

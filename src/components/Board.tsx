@@ -10,20 +10,22 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { Task, TaskStatus, Category } from "@/types";
-import { BoardColumn } from "./BoardColumn";
+import { BoardColumn, ColumnAccent } from "./BoardColumn";
 import { AddTaskForm } from "./AddTaskForm";
 import { CategoryFilter } from "./CategoryFilter";
+import { TaskDetailPanel } from "./TaskDetailPanel";
 
-const COLUMNS: { status: TaskStatus; title: string }[] = [
-  { status: "yapilacak", title: "Yapılacak" },
-  { status: "yapiliyor", title: "Yapılıyor" },
-  { status: "tamamlandi", title: "Tamamlandı" },
+const COLUMNS: { status: TaskStatus; title: string; accent: ColumnAccent }[] = [
+  { status: "yapilacak", title: "Yapılacak", accent: "sky" },
+  { status: "yapiliyor", title: "Yapılıyor", accent: "amber" },
+  { status: "tamamlandi", title: "Tamamlandı", accent: "emerald" },
 ];
 
 export function Board() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,18 +68,24 @@ export function Board() {
     return map;
   }, [filteredTasks]);
 
-  async function updateTaskStatus(id: string, status: TaskStatus) {
+  const selectedTask = selectedTaskId ? tasks.find((t) => t.id === selectedTaskId) ?? null : null;
+
+  async function updateTask(id: string, updates: Partial<Task>) {
     const previous = tasks;
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
     const res = await fetch(`/api/tasks/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(updates),
     });
     if (!res.ok) {
       setTasks(previous);
       setError("Görev güncellenemedi");
     }
+  }
+
+  function updateTaskStatus(id: string, status: TaskStatus) {
+    updateTask(id, { status });
   }
 
   async function handleAdd(title: string, category: string) {
@@ -122,30 +130,34 @@ export function Board() {
   }
 
   if (loading) {
-    return <p className="text-sm text-neutral-500">Yükleniyor...</p>;
+    return <p className="text-sm text-slate-400">Yükleniyor...</p>;
   }
 
   if (error && tasks.length === 0 && categories.length === 0) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+      <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
         {error}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+        <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
           {error}
         </div>
       )}
-      <AddTaskForm categories={categories} onAdd={handleAdd} />
-      <CategoryFilter
-        categories={categories}
-        selected={selectedCategory}
-        onSelect={setSelectedCategory}
-      />
+      <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <AddTaskForm categories={categories} onAdd={handleAdd} />
+        <div className="mt-3">
+          <CategoryFilter
+            categories={categories}
+            selected={selectedCategory}
+            onSelect={setSelectedCategory}
+          />
+        </div>
+      </div>
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {COLUMNS.map((col) => (
@@ -153,14 +165,26 @@ export function Board() {
               key={col.status}
               status={col.status}
               title={col.title}
+              accent={col.accent}
               tasks={tasksByStatus[col.status]}
               categories={categories}
               onMoveNext={updateTaskStatus}
               onDelete={handleDelete}
+              onOpen={setSelectedTaskId}
             />
           ))}
         </div>
       </DndContext>
+      {selectedTask && (
+        <TaskDetailPanel
+          key={selectedTask.id}
+          task={selectedTask}
+          categories={categories}
+          onClose={() => setSelectedTaskId(null)}
+          onUpdate={updateTask}
+          onDelete={handleDelete}
+        />
+      )}
     </div>
   );
 }

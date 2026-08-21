@@ -10,7 +10,7 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await request.json();
-  const { status, title, category } = body;
+  const { status, title, category, notes, deadline, is_important } = body;
 
   if (status && !VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: "geçersiz status" }, { status: 400 });
@@ -23,6 +23,9 @@ export async function PATCH(
   }
   if (title) updates.title = title;
   if (category) updates.category = category;
+  if (notes !== undefined) updates.notes = notes;
+  if (deadline !== undefined) updates.deadline = deadline;
+  if (is_important !== undefined) updates.is_important = is_important;
 
   const { data, error } = await supabase
     .from("tasks")
