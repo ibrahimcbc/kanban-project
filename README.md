@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kişisel Gelişim Dashboard
 
-## Getting Started
+Proje kapsamı ve yol haritası için [PROJECT.md](./PROJECT.md) dosyasına bakın.
 
-First, run the development server:
+## Kurulum (Hafta 1)
+
+1. **Supabase projesi oluşturun**: [supabase.com](https://supabase.com) üzerinde
+   yeni bir proje açın (free tier yeterli).
+2. **Şemayı çalıştırın**: Supabase Dashboard → SQL Editor içine
+   [`supabase/schema.sql`](./supabase/schema.sql) dosyasının içeriğini yapıştırıp
+   çalıştırın. Bu, `tasks` ve `categories` tablolarını, RLS policy'lerini ve
+   başlangıç kategorilerini oluşturur.
+3. **Env değişkenlerini ayarlayın**: `.env.local.example` dosyasını
+   `.env.local` olarak kopyalayın ve Supabase Dashboard → Project Settings →
+   API bölümünden aldığınız `Project URL` ve `anon public` key'i girin.
+
+   ```bash
+   cp .env.local.example .env.local
+   ```
+
+4. **Geliştirme sunucusunu başlatın**:
+
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+   [http://localhost:3000](http://localhost:3000) adresini açın.
+
+## Vercel'e Deploy
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npx vercel
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Vercel Dashboard'da proje ayarlarına, `.env.local` içindeki iki değişkeni
+(`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) Environment
+Variables olarak eklemeyi unutmayın — aksi halde production build Supabase'e
+bağlanamaz.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## PWA — Ana Ekrana Ekleme
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`public/manifest.json` ve `public/sw.js` ile temel PWA desteği var (offline
+cache yok, sadece "ana ekrana ekle" için). Deploy sonrası Mac/iPhone/iPad'de
+tarayıcı menüsünden "Ana Ekrana Ekle" ile kurulabilir.
 
-## Learn More
+## Tech Stack
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js (App Router) · TypeScript · Tailwind CSS · Supabase · @dnd-kit ·
+Vercel
