@@ -17,6 +17,9 @@ create table if not exists tasks (
   category text not null,
   status text not null default 'yapilacak'
     check (status in ('yapilacak', 'yapiliyor', 'tamamlandi')),
+  notes text,
+  deadline date,
+  is_important boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   completed_at timestamptz
@@ -39,8 +42,8 @@ create policy "tasks_all" on tasks for all using (true) with check (true);
 
 -- Başlangıç kategorileri
 insert into categories (name, color) values
-  ('günlük', '#64748b'),
+  ('günlük', '#6366f1'),
   ('spor', '#22c55e'),
   ('kodlama', '#3b82f6'),
-  ('fikirler', '#eab308')
+  ('fikirler', '#f59e0b')
 on conflict (name) do nothing;

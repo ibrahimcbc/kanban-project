@@ -15,8 +15,8 @@ export function CategoryFilter({ categories, selected, onSelect }: CategoryFilte
         onClick={() => onSelect(null)}
         className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
           selected === null
-            ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
-            : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+            ? "bg-violet-600 text-white"
+            : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
         }`}
       >
         Tümü
@@ -28,9 +28,9 @@ export function CategoryFilter({ categories, selected, onSelect }: CategoryFilte
           className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
             selected === c.name
               ? "text-white"
-              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
           }`}
-          style={selected === c.name ? { backgroundColor: c.color ?? "#64748b" } : undefined}
+          style={selected === c.name ? { backgroundColor: c.color ?? "#6366f1" } : undefined}
         >
           {c.name}
         </button>

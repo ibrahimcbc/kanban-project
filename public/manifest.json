@@ -4,8 +4,8 @@
   "description": "Kanban tabanlı task yönetimi + GitHub/Strava aktivite takibi",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fafafa",
-  "theme_color": "#171717",
+  "background_color": "#f5f3ff",
+  "theme_color": "#7c3aed",
   "icons": [
     {
       "src": "/icon-192.png",

@@ -5,6 +5,9 @@ export interface Task {
   title: string;
   category: string;
   status: TaskStatus;
+  notes: string | null;
+  deadline: string | null;
+  is_important: boolean;
   created_at: string;
   updated_at: string;
   completed_at: string | null;
