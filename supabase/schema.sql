@@ -1,7 +1,6 @@
--- Kişisel Gelişim Dashboard — v0 şeması (Hafta 1)
+-- Kişisel Gelişim Dashboard — şema (v0 + Google Calendar senkronu)
 -- Supabase SQL Editor'de çalıştırılacak.
--- integration_tokens / github_activity / strava_activities tabloları
--- Hafta 2'de RLS policy'leriyle birlikte eklenecek (bkz. PROJECT.md).
+-- github_activity / strava_activities tabloları Hafta 2'de eklenecek (bkz. PROJECT.md).
 
 create extension if not exists "pgcrypto";
 
@@ -20,6 +19,9 @@ create table if not exists tasks (
   notes text,
   deadline date,
   is_important boolean not null default false,
+  start_time timestamptz,
+  end_time timestamptz,
+  google_event_id text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   completed_at timestamptz
@@ -28,9 +30,19 @@ create table if not exists tasks (
 create index if not exists tasks_status_idx on tasks (status);
 create index if not exists tasks_category_idx on tasks (category);
 
--- Tek kullanıcılı proje: RLS'i basit tutuyoruz, anon key sadece bu
--- projeye özel ve public'e paylaşılmayacak. Hafta 2'de secret içeren
--- integration_tokens tablosu eklendiğinde RLS mutlaka zorunlu olacak.
+-- OAuth token'ları (Google Calendar, ileride Strava/GitHub). RLS açık ve
+-- kasıtlı olarak HİÇ policy yok — anon key ile erişilemez, sadece server-only
+-- service role key ile (bkz. src/lib/supabaseAdmin.ts).
+create table if not exists integration_tokens (
+  provider text primary key,
+  access_token text,
+  refresh_token text,
+  expires_at timestamptz
+);
+alter table integration_tokens enable row level security;
+
+-- Tek kullanıcılı proje: tasks/categories için RLS'i basit tutuyoruz, anon
+-- key sadece bu projeye özel ve public'e paylaşılmayacak.
 alter table categories enable row level security;
 alter table tasks enable row level security;
 

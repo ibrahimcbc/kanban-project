@@ -8,6 +8,9 @@ export interface Task {
   notes: string | null;
   deadline: string | null;
   is_important: boolean;
+  start_time: string | null;
+  end_time: string | null;
+  google_event_id: string | null;
   created_at: string;
   updated_at: string;
   completed_at: string | null;

@@ -14,6 +14,7 @@ import { BoardColumn, ColumnAccent } from "./BoardColumn";
 import { AddTaskForm } from "./AddTaskForm";
 import { CategoryFilter } from "./CategoryFilter";
 import { TaskDetailPanel } from "./TaskDetailPanel";
+import { GoogleCalendarStatus } from "./GoogleCalendarStatus";
 
 const COLUMNS: { status: TaskStatus; title: string; accent: ColumnAccent }[] = [
   { status: "yapilacak", title: "Yapılacak", accent: "sky" },
@@ -28,6 +29,18 @@ export function Board() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [calendarNotice] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const calendarParam = new URLSearchParams(window.location.search).get("calendar");
+    if (!calendarParam) return null;
+    const messages: Record<string, string> = {
+      connected: "Google Calendar bağlandı.",
+      denied: "Google Calendar bağlantısı reddedildi.",
+      error: "Google Calendar bağlanırken hata oluştu.",
+    };
+    window.history.replaceState({}, "", window.location.pathname);
+    return messages[calendarParam] ?? null;
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -148,8 +161,18 @@ export function Board() {
           {error}
         </div>
       )}
+      {calendarNotice && (
+        <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-300">
+          {calendarNotice}
+        </div>
+      )}
       <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60">
-        <AddTaskForm categories={categories} onAdd={handleAdd} />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <AddTaskForm categories={categories} onAdd={handleAdd} />
+          </div>
+          <GoogleCalendarStatus />
+        </div>
         <div className="mt-3">
           <CategoryFilter
             categories={categories}

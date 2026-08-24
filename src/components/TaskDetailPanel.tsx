@@ -46,6 +46,28 @@ export function TaskDetailPanel({
     }
   }
 
+  function toLocalInputValue(iso: string | null) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function fromLocalInputValue(value: string): string | null {
+    if (!value) return null;
+    return new Date(value).toISOString();
+  }
+
+  function handleStartTimeChange(value: string) {
+    const iso = fromLocalInputValue(value);
+    const updates: Partial<Task> = { start_time: iso };
+    // Bitiş boşsa veya başlangıçtan önceyse, 1 saatlik varsayılan bir aralık kur.
+    if (iso && (!task.end_time || new Date(task.end_time) <= new Date(iso))) {
+      updates.end_time = new Date(new Date(iso).getTime() + 60 * 60 * 1000).toISOString();
+    }
+    onUpdate(task.id, updates);
+  }
+
   const categoryColor = categories.find((c) => c.name === task.category)?.color ?? "#6366f1";
 
   return (
@@ -117,6 +139,38 @@ export function TaskDetailPanel({
                 {task.is_important ? "Önemli" : "Önemsiz"}
               </button>
             </label>
+          </div>
+
+          <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+            <label className="flex flex-col gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+              Başlangıç
+              <input
+                type="datetime-local"
+                value={toLocalInputValue(task.start_time)}
+                onChange={(e) => handleStartTimeChange(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-violet-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+              Bitiş
+              <input
+                type="datetime-local"
+                value={toLocalInputValue(task.end_time)}
+                onChange={(e) => onUpdate(task.id, { end_time: fromLocalInputValue(e.target.value) })}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-violet-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+              />
+            </label>
+            {task.start_time && task.end_time && (
+              <span
+                className={`mb-1.5 rounded-full px-2 py-1 text-xs font-medium ${
+                  task.google_event_id
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+                    : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                }`}
+              >
+                {task.google_event_id ? "📅 Takvimde" : "Takvime eklenmedi"}
+              </span>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
