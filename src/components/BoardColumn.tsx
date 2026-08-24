@@ -2,7 +2,7 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Task, TaskStatus, Category } from "@/types";
+import { Task, TaskStatus, Bucket, Project } from "@/types";
 import { TaskCard } from "./TaskCard";
 
 export type ColumnAccent = "sky" | "amber" | "emerald";
@@ -36,7 +36,8 @@ interface BoardColumnProps {
   title: string;
   accent: ColumnAccent;
   tasks: Task[];
-  categories: Category[];
+  buckets: Bucket[];
+  projects: Project[];
   onMoveNext: (id: string, nextStatus: TaskStatus) => void;
   onDelete: (id: string) => void;
   onOpen: (id: string) => void;
@@ -47,7 +48,8 @@ export function BoardColumn({
   title,
   accent,
   tasks,
-  categories,
+  buckets,
+  projects,
   onMoveNext,
   onDelete,
   onOpen,
@@ -70,16 +72,22 @@ export function BoardColumn({
       </div>
       <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <div className="flex flex-col gap-2.5">
-          {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              categoryColor={categories.find((c) => c.name === task.category)?.color ?? undefined}
-              onMoveNext={onMoveNext}
-              onDelete={onDelete}
-              onOpen={onOpen}
-            />
-          ))}
+          {tasks.map((task) => {
+            const bucket = buckets.find((b) => b.id === task.bucket_id);
+            const project = projects.find((p) => p.id === task.project_id);
+            return (
+              <TaskCard
+                key={task.id}
+                task={task}
+                bucketName={bucket?.name}
+                bucketColor={bucket?.color ?? undefined}
+                projectName={project?.name}
+                onMoveNext={onMoveNext}
+                onDelete={onDelete}
+                onOpen={onOpen}
+              />
+            );
+          })}
         </div>
       </SortableContext>
     </div>

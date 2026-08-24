@@ -1,25 +1,31 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Task, Category } from "@/types";
+import { Task, Bucket, Project } from "@/types";
 
 interface TaskDetailPanelProps {
   task: Task;
-  categories: Category[];
+  buckets: Bucket[];
+  projects: Project[];
   onClose: () => void;
   onUpdate: (id: string, updates: Partial<Task>) => void;
   onDelete: (id: string) => void;
+  onCreateProject: (name: string, bucketId: string | null) => Promise<Project | null>;
 }
 
 export function TaskDetailPanel({
   task,
-  categories,
+  buckets,
+  projects,
   onClose,
   onUpdate,
   onDelete,
+  onCreateProject,
 }: TaskDetailPanelProps) {
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes ?? "");
+  const [creatingProject, setCreatingProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
   const notesTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -68,7 +74,23 @@ export function TaskDetailPanel({
     onUpdate(task.id, updates);
   }
 
-  const categoryColor = categories.find((c) => c.name === task.category)?.color ?? "#6366f1";
+  async function handleCreateProject() {
+    const name = newProjectName.trim();
+    if (!name) {
+      setCreatingProject(false);
+      return;
+    }
+    const project = await onCreateProject(name, task.bucket_id);
+    if (project) {
+      onUpdate(task.id, { project_id: project.id });
+    }
+    setNewProjectName("");
+    setCreatingProject(false);
+  }
+
+  const bucket = buckets.find((b) => b.id === task.bucket_id);
+  const bucketColor = bucket?.color ?? "#6366f1";
+  const projectsInBucket = projects.filter((p) => p.bucket_id === task.bucket_id);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -79,18 +101,18 @@ export function TaskDetailPanel({
       <div className="relative flex h-full w-full max-w-md flex-col overflow-y-auto bg-white shadow-2xl dark:bg-slate-900">
         <div
           className="h-2 w-full shrink-0"
-          style={{ backgroundColor: categoryColor }}
+          style={{ backgroundColor: bucketColor }}
         />
         <div className="flex items-center justify-between px-5 pt-4">
           <select
-            value={task.category}
-            onChange={(e) => onUpdate(task.id, { category: e.target.value })}
+            value={task.bucket_id ?? ""}
+            onChange={(e) => onUpdate(task.id, { bucket_id: e.target.value, project_id: null })}
             className="rounded-full px-3 py-1 text-xs font-semibold text-white outline-none"
-            style={{ backgroundColor: categoryColor }}
+            style={{ backgroundColor: bucketColor }}
           >
-            {categories.map((c) => (
-              <option key={c.id} value={c.name} className="text-slate-900">
-                {c.name}
+            {buckets.map((b) => (
+              <option key={b.id} value={b.id} className="text-slate-900">
+                {b.name}
               </option>
             ))}
           </select>
@@ -113,6 +135,49 @@ export function TaskDetailPanel({
             placeholder="Görev başlığı"
           />
 
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Proje</span>
+            {creatingProject ? (
+              <div className="flex gap-2">
+                <input
+                  autoFocus
+                  type="text"
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleCreateProject()}
+                  placeholder="Yeni proje adı..."
+                  className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                />
+                <button
+                  onClick={handleCreateProject}
+                  className="rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-700"
+                >
+                  Ekle
+                </button>
+              </div>
+            ) : (
+              <select
+                value={task.project_id ?? ""}
+                onChange={(e) => {
+                  if (e.target.value === "__new__") {
+                    setCreatingProject(true);
+                    return;
+                  }
+                  onUpdate(task.id, { project_id: e.target.value || null });
+                }}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                <option value="">— Proje yok —</option>
+                {projectsInBucket.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+                <option value="__new__">+ Yeni proje...</option>
+              </select>
+            )}
+          </div>
+
           <div className="flex flex-wrap gap-3">
             <label className="flex flex-col gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
               Deadline
@@ -124,21 +189,35 @@ export function TaskDetailPanel({
               />
             </label>
 
-            <label className="flex flex-col gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
-              Öncelik
-              <button
-                type="button"
-                onClick={() => onUpdate(task.id, { is_important: !task.is_important })}
-                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
-                  task.is_important
-                    ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-400"
-                    : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
-                }`}
-              >
-                <span>{task.is_important ? "★" : "☆"}</span>
-                {task.is_important ? "Önemli" : "Önemsiz"}
-              </button>
-            </label>
+            <div className="flex flex-col gap-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+              Eisenhower
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onUpdate(task.id, { importance: !task.importance })}
+                  className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-sm font-medium transition-colors ${
+                    task.importance
+                      ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-400"
+                      : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                  }`}
+                >
+                  <span>{task.importance ? "★" : "☆"}</span>
+                  Önemli
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onUpdate(task.id, { urgency: !task.urgency })}
+                  className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-sm font-medium transition-colors ${
+                    task.urgency
+                      ? "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-400"
+                      : "border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                  }`}
+                >
+                  <span>🔥</span>
+                  Acil
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
