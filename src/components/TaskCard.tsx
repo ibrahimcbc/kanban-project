@@ -38,6 +38,12 @@ function formatDate(deadline: string) {
   return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
 }
 
+function formatTimeRange(start: string, end: string) {
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  return `${fmt(start)}–${fmt(end)}`;
+}
+
 export function TaskCard({ task, categoryColor, onMoveNext, onDelete, onOpen }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id });
@@ -91,6 +97,12 @@ export function TaskCard({ task, categoryColor, onMoveNext, onDelete, onOpen }: 
             {task.deadline && (
               <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${dueStyle}`}>
                 {formatDate(task.deadline)}
+              </span>
+            )}
+            {task.start_time && task.end_time && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
+                {task.google_event_id && <span title="Google Calendar'da">📅</span>}
+                {formatTimeRange(task.start_time, task.end_time)}
               </span>
             )}
           </div>
