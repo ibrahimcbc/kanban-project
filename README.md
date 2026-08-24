@@ -48,3 +48,4 @@ tarayıcı menüsünden "Ana Ekrana Ekle" ile kurulabilir.
 
 Next.js (App Router) · TypeScript · Tailwind CSS · Supabase · @dnd-kit ·
 Vercel
+
