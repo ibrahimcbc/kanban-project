@@ -3,9 +3,9 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET() {
   const { data, error } = await supabase
-    .from("categories")
+    .from("projects")
     .select("*")
-    .order("name", { ascending: true });
+    .order("created_at", { ascending: true });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -15,15 +15,20 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { name, color } = body;
+  const { name, bucket_id, status, deadline } = body;
 
   if (!name) {
     return NextResponse.json({ error: "name zorunlu" }, { status: 400 });
   }
 
   const { data, error } = await supabase
-    .from("categories")
-    .insert({ name, color: color ?? null })
+    .from("projects")
+    .insert({
+      name,
+      bucket_id: bucket_id ?? null,
+      status: status ?? "ongoing",
+      deadline: deadline ?? null,
+    })
     .select()
     .single();
 

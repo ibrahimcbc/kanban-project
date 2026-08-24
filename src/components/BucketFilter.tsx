@@ -1,14 +1,14 @@
 "use client";
 
-import { Category } from "@/types";
+import { Bucket } from "@/types";
 
-interface CategoryFilterProps {
-  categories: Category[];
+interface BucketFilterProps {
+  buckets: Bucket[];
   selected: string | null;
-  onSelect: (name: string | null) => void;
+  onSelect: (id: string | null) => void;
 }
 
-export function CategoryFilter({ categories, selected, onSelect }: CategoryFilterProps) {
+export function BucketFilter({ buckets, selected, onSelect }: BucketFilterProps) {
   return (
     <div className="flex flex-wrap gap-2">
       <button
@@ -21,18 +21,18 @@ export function CategoryFilter({ categories, selected, onSelect }: CategoryFilte
       >
         Tümü
       </button>
-      {categories.map((c) => (
+      {buckets.map((b) => (
         <button
-          key={c.id}
-          onClick={() => onSelect(c.name)}
+          key={b.id}
+          onClick={() => onSelect(b.id)}
           className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-            selected === c.name
+            selected === b.id
               ? "text-white"
               : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
           }`}
-          style={selected === c.name ? { backgroundColor: c.color ?? "#6366f1" } : undefined}
+          style={selected === b.id ? { backgroundColor: b.color ?? "#6366f1" } : undefined}
         >
-          {c.name}
+          {b.name}
         </button>
       ))}
     </div>

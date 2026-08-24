@@ -11,7 +11,18 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await request.json();
-  const { status, title, category, notes, deadline, is_important, start_time, end_time } = body;
+  const {
+    status,
+    title,
+    bucket_id,
+    project_id,
+    notes,
+    deadline,
+    importance,
+    urgency,
+    start_time,
+    end_time,
+  } = body;
 
   if (status && !VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: "geçersiz status" }, { status: 400 });
@@ -23,10 +34,12 @@ export async function PATCH(
     updates.completed_at = status === "tamamlandi" ? new Date().toISOString() : null;
   }
   if (title) updates.title = title;
-  if (category) updates.category = category;
+  if (bucket_id !== undefined) updates.bucket_id = bucket_id;
+  if (project_id !== undefined) updates.project_id = project_id;
   if (notes !== undefined) updates.notes = notes;
   if (deadline !== undefined) updates.deadline = deadline;
-  if (is_important !== undefined) updates.is_important = is_important;
+  if (importance !== undefined) updates.importance = importance;
+  if (urgency !== undefined) updates.urgency = urgency;
   if (start_time !== undefined) updates.start_time = start_time;
   if (end_time !== undefined) updates.end_time = end_time;
 

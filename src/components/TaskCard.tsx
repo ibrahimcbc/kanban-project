@@ -13,7 +13,9 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
 
 interface TaskCardProps {
   task: Task;
-  categoryColor?: string;
+  bucketName?: string;
+  bucketColor?: string;
+  projectName?: string;
   onMoveNext: (id: string, nextStatus: TaskStatus) => void;
   onDelete: (id: string) => void;
   onOpen: (id: string) => void;
@@ -44,7 +46,15 @@ function formatTimeRange(start: string, end: string) {
   return `${fmt(start)}–${fmt(end)}`;
 }
 
-export function TaskCard({ task, categoryColor, onMoveNext, onDelete, onOpen }: TaskCardProps) {
+export function TaskCard({
+  task,
+  bucketName,
+  bucketColor,
+  projectName,
+  onMoveNext,
+  onDelete,
+  onOpen,
+}: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id });
 
@@ -52,7 +62,7 @@ export function TaskCard({ task, categoryColor, onMoveNext, onDelete, onOpen }: 
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    borderLeftColor: categoryColor ?? "#6366f1",
+    borderLeftColor: bucketColor ?? "#6366f1",
   };
 
   const currentIndex = STATUS_ORDER.indexOf(task.status);
@@ -81,19 +91,31 @@ export function TaskCard({ task, categoryColor, onMoveNext, onDelete, onOpen }: 
             <p className="break-words text-sm font-medium text-slate-800 dark:text-slate-100">
               {task.title}
             </p>
-            {task.is_important && (
-              <span className="shrink-0 text-amber-400" title="Önemli">
-                ★
-              </span>
-            )}
+            <div className="flex shrink-0 items-center gap-1">
+              {task.urgency && (
+                <span title="Acil">🔥</span>
+              )}
+              {task.importance && (
+                <span className="text-amber-400" title="Önemli">
+                  ★
+                </span>
+              )}
+            </div>
           </div>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <span
-              className="inline-block rounded-full px-2 py-0.5 text-xs font-medium text-white"
-              style={{ backgroundColor: categoryColor ?? "#6366f1" }}
-            >
-              {task.category}
-            </span>
+            {bucketName && (
+              <span
+                className="inline-block rounded-full px-2 py-0.5 text-xs font-medium text-white"
+                style={{ backgroundColor: bucketColor ?? "#6366f1" }}
+              >
+                {bucketName}
+              </span>
+            )}
+            {projectName && (
+              <span className="inline-block rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                📁 {projectName}
+              </span>
+            )}
             {task.deadline && (
               <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${dueStyle}`}>
                 {formatDate(task.deadline)}

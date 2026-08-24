@@ -9,10 +9,11 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Task, TaskStatus, Category } from "@/types";
+import { Task, TaskStatus, Bucket, Project } from "@/types";
 import { BoardColumn, ColumnAccent } from "./BoardColumn";
 import { AddTaskForm } from "./AddTaskForm";
-import { CategoryFilter } from "./CategoryFilter";
+import { BucketFilter } from "./BucketFilter";
+import { ViewFilter, ViewOption, taskMatchesView } from "./ViewFilter";
 import { TaskDetailPanel } from "./TaskDetailPanel";
 import { GoogleCalendarStatus } from "./GoogleCalendarStatus";
 
@@ -24,8 +25,10 @@ const COLUMNS: { status: TaskStatus; title: string; accent: ColumnAccent }[] = [
 
 export function Board() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [buckets, setBuckets] = useState<Bucket[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedBucket, setSelectedBucket] = useState<string | null>(null);
+  const [selectedView, setSelectedView] = useState<ViewOption>("tumu");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,15 +53,17 @@ export function Board() {
   useEffect(() => {
     (async () => {
       try {
-        const [tasksRes, categoriesRes] = await Promise.all([
+        const [tasksRes, bucketsRes, projectsRes] = await Promise.all([
           fetch("/api/tasks"),
-          fetch("/api/categories"),
+          fetch("/api/buckets"),
+          fetch("/api/projects"),
         ]);
-        if (!tasksRes.ok || !categoriesRes.ok) {
+        if (!tasksRes.ok || !bucketsRes.ok || !projectsRes.ok) {
           throw new Error("Veriler yüklenemedi. Supabase bağlantınızı kontrol edin.");
         }
         setTasks(await tasksRes.json());
-        setCategories(await categoriesRes.json());
+        setBuckets(await bucketsRes.json());
+        setProjects(await projectsRes.json());
       } catch (err) {
         setError(err instanceof Error ? err.message : "Bilinmeyen hata");
       } finally {
@@ -69,8 +74,11 @@ export function Board() {
 
   const filteredTasks = useMemo(
     () =>
-      selectedCategory ? tasks.filter((t) => t.category === selectedCategory) : tasks,
-    [tasks, selectedCategory]
+      tasks.filter((t) => {
+        if (selectedBucket && t.bucket_id !== selectedBucket) return false;
+        return taskMatchesView(t, selectedView);
+      }),
+    [tasks, selectedBucket, selectedView]
   );
 
   const tasksByStatus = useMemo(() => {
@@ -101,11 +109,11 @@ export function Board() {
     updateTask(id, { status });
   }
 
-  async function handleAdd(title: string, category: string) {
+  async function handleAdd(title: string, bucketId: string) {
     const res = await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, category }),
+      body: JSON.stringify({ title, bucket_id: bucketId }),
     });
     if (!res.ok) {
       setError("Görev eklenemedi");
@@ -123,6 +131,21 @@ export function Board() {
       setTasks(previous);
       setError("Görev silinemedi");
     }
+  }
+
+  async function handleCreateProject(name: string, bucketId: string | null): Promise<Project | null> {
+    const res = await fetch("/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, bucket_id: bucketId }),
+    });
+    if (!res.ok) {
+      setError("Proje oluşturulamadı");
+      return null;
+    }
+    const newProject = await res.json();
+    setProjects((prev) => [...prev, newProject]);
+    return newProject;
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -146,7 +169,7 @@ export function Board() {
     return <p className="text-sm text-slate-400">Yükleniyor...</p>;
   }
 
-  if (error && tasks.length === 0 && categories.length === 0) {
+  if (error && tasks.length === 0 && buckets.length === 0) {
     return (
       <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
         {error}
@@ -169,16 +192,13 @@ export function Board() {
       <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <AddTaskForm categories={categories} onAdd={handleAdd} />
+            <AddTaskForm buckets={buckets} onAdd={handleAdd} />
           </div>
           <GoogleCalendarStatus />
         </div>
-        <div className="mt-3">
-          <CategoryFilter
-            categories={categories}
-            selected={selectedCategory}
-            onSelect={setSelectedCategory}
-          />
+        <div className="mt-3 flex flex-col gap-2">
+          <ViewFilter selected={selectedView} onSelect={setSelectedView} />
+          <BucketFilter buckets={buckets} selected={selectedBucket} onSelect={setSelectedBucket} />
         </div>
       </div>
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
@@ -190,7 +210,8 @@ export function Board() {
               title={col.title}
               accent={col.accent}
               tasks={tasksByStatus[col.status]}
-              categories={categories}
+              buckets={buckets}
+              projects={projects}
               onMoveNext={updateTaskStatus}
               onDelete={handleDelete}
               onOpen={setSelectedTaskId}
@@ -202,10 +223,12 @@ export function Board() {
         <TaskDetailPanel
           key={selectedTask.id}
           task={selectedTask}
-          categories={categories}
+          buckets={buckets}
+          projects={projects}
           onClose={() => setSelectedTaskId(null)}
           onUpdate={updateTask}
           onDelete={handleDelete}
+          onCreateProject={handleCreateProject}
         />
       )}
     </div>

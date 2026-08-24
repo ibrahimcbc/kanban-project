@@ -1,24 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Category } from "@/types";
+import { Bucket } from "@/types";
 
 interface AddTaskFormProps {
-  categories: Category[];
-  onAdd: (title: string, category: string) => Promise<void>;
+  buckets: Bucket[];
+  onAdd: (title: string, bucketId: string) => Promise<void>;
 }
 
-export function AddTaskForm({ categories, onAdd }: AddTaskFormProps) {
+export function AddTaskForm({ buckets, onAdd }: AddTaskFormProps) {
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState(categories[0]?.name ?? "");
+  const [bucketId, setBucketId] = useState(buckets[0]?.id ?? "");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !category) return;
+    if (!title.trim() || !bucketId) return;
     setSubmitting(true);
     try {
-      await onAdd(title.trim(), category);
+      await onAdd(title.trim(), bucketId);
       setTitle("");
     } finally {
       setSubmitting(false);
@@ -35,13 +35,13 @@ export function AddTaskForm({ categories, onAdd }: AddTaskFormProps) {
         className="min-w-[180px] flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
       />
       <select
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
+        value={bucketId}
+        onChange={(e) => setBucketId(e.target.value)}
         className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
       >
-        {categories.map((c) => (
-          <option key={c.id} value={c.name}>
-            {c.name}
+        {buckets.map((b) => (
+          <option key={b.id} value={b.id}>
+            {b.name}
           </option>
         ))}
       </select>
